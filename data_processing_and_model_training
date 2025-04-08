@@ -1,199 +1,69 @@
-# Import libraries
+import cv2
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import tensorflow as tf
+import json
 from tensorflow import keras
-from tensorflow.keras.layers import *
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import warnings
+from tensorflow.keras.applications import InceptionV3
+from tensorflow.keras import layers
+from tensorflow.keras.models import Model
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score, confusion_matrix, classification_report
 
-warnings.filterwarnings('ignore')
+# Load images and resize them to 75x75, which is suitable for InceptionV3
+def load_images_from_folder(folder):
+    images, labels = [], []
+    label_map = {}
+    categories = os.listdir(folder)
+    for idx, label in enumerate(categories):
+        label_map[label] = idx
 
+    for label, idx in label_map.items():
+        subfolder_path = os.path.join(folder, label)
+        if os.path.isdir(subfolder_path):
+            for filename in os.listdir(subfolder_path):
+                img_path = os.path.join(subfolder_path, filename)
+                img = cv2.imread(img_path)
+                if img is not None:
+                    img = cv2.resize(img, (75, 75))  # Resize to 75x75
+                    images.append(img)
+                    labels.append(idx)
 
-# Logging function
-def log_message(message):
-    print(f"[LOG] {message}")
+    images_normalized = np.array(images) / 255.0
+    labels_array = np.array(labels)
+    return images_normalized, labels_array, label_map
 
+X_train, y_train, label_map = load_images_from_folder('Vegetable_Images/train')
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+X_test, y_test, _ = load_images_from_folder('Vegetable_Images/test')
 
-# Verify directory paths
-def verify_directory_structure():
-    log_message("Verifying directory structure...")
-    paths = {
-        "Train": "Vegetable Images/train",
-        "Validation": "Vegetable Images/validation",
-        "Test": "Vegetable Images/test"
-    }
+num_classes = len(label_map)
+y_train = keras.utils.to_categorical(y_train, num_classes)
+y_val = keras.utils.to_categorical(y_val, num_classes)
+y_test = keras.utils.to_categorical(y_test, num_classes)
 
-    for path_name, path in paths.items():
-        if not os.path.exists(path):
-            log_message(f"❌ {path_name} directory does not exist: {path}")
-            return False
+# Load InceptionV3 without the top layers (input size set to 75x75)
+base_model = InceptionV3(weights='imagenet', include_top=False, input_shape=(75, 75, 3))
+base_model.trainable = False  # Freeze the base model weights
 
-        log_message(f"✅ {path_name} directory exists: {path}")
+# Add custom layers
+x = layers.GlobalAveragePooling2D()(base_model.output)
+x = layers.Dense(128, activation="relu")(x)
+x = layers.Dropout(0.5)(x)  # Dropout layer to prevent overfitting
+output = layers.Dense(num_classes, activation="softmax")(x)
 
-        # Count images in each category
-        for category in os.listdir(path):
-            category_path = os.path.join(path, category)
-            image_count = len([f for f in os.listdir(category_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
-            log_message(f"   - {category}: {image_count} images")
+# Create the new model
+model = Model(inputs=base_model.input, outputs=output)
 
-    return True
+# Compile and train the model
+model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+model.fit(X_train, y_train, epochs=10, validation_data=(X_val, y_val))
 
+# Save the model
+model.save("vegetable_classifier.keras")
 
-# Verify model can read images
-def test_image_generators():
-    log_message("Testing image generators...")
+# Load the trained model for prediction
+loaded_model = keras.models.load_model("vegetable_classifier.keras")
 
-    try:
-        train_gen = ImageDataGenerator(rescale=1.0 / 255.0)
-        train_image_generator = train_gen.flow_from_directory(
-            "Vegetable Images/train",
-            target_size=(150, 150),
-            batch_size=32,
-            class_mode='categorical')
-        log_message(f"✅ Train generator created successfully")
-        log_message(f"Classes detected: {train_image_generator.class_indices}")
-    except Exception as e:
-        log_message(f"❌ Train generator failed: {e}")
-        return False
-
-    try:
-        val_gen = ImageDataGenerator(rescale=1.0 / 255.0)
-        val_image_generator = val_gen.flow_from_directory(
-            "Vegetable Images/validation",
-            target_size=(150, 150),
-            batch_size=32,
-            class_mode='categorical')
-        log_message(f"✅ Validation generator created successfully")
-    except Exception as e:
-        log_message(f"❌ Validation generator failed: {e}")
-        return False
-
-    try:
-        test_gen = ImageDataGenerator(rescale=1.0 / 255.0)
-        test_image_generator = test_gen.flow_from_directory(
-            "Vegetable Images/test",
-            target_size=(150, 150),
-            batch_size=32,
-            class_mode='categorical')
-        log_message(f"✅ Test generator created successfully")
-    except Exception as e:
-        log_message(f"❌ Test generator failed: {e}")
-        return False
-
-    return True
-
-
-# Build model with more logging
-def build_and_compile_model(num_classes):
-    log_message("Building CNN model...")
-
-    model = Sequential([
-        Conv2D(filters=32, kernel_size=3, strides=1, padding='same', activation='relu', input_shape=[150, 150, 3]),
-        MaxPooling2D(2),
-        Conv2D(filters=64, kernel_size=3, strides=1, padding='same', activation='relu'),
-        MaxPooling2D(2),
-        Flatten(),
-        Dense(128, activation='relu'),
-        Dropout(0.25),
-        Dense(128, activation='relu'),
-        Dense(num_classes, activation='softmax')
-    ])
-
-    log_message("Model summary:")
-    model.summary()
-
-    log_message("Compiling model...")
-    model.compile(
-        optimizer='Adam',
-        loss='categorical_crossentropy',
-        metrics=['accuracy']
-    )
-
-    return model
-
-
-# Save model and class mapping
-def save_model_and_metadata(model, train_image_generator):
-    # Create a directory to store model and metadata
-    save_dir = "vegetable_classification_model"
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Save the model
-    model_path = os.path.join(save_dir, "vegetable_model.keras")
-    model.save(model_path)
-    log_message(f"✅ Model saved to {model_path}")
-
-    # Save class indices
-    import json
-    class_indices_path = os.path.join(save_dir, "class_indices.json")
-    with open(class_indices_path, 'w') as f:
-        json.dump(train_image_generator.class_indices, f)
-    log_message(f"✅ Class indices saved to {class_indices_path}")
-
-
-# Main execution
-def main():
-    log_message("Starting Vegetable Classification Pipeline")
-
-    # Verify directory structure
-    if not verify_directory_structure():
-        log_message("❌ Directory structure verification failed. Exiting.")
-        return
-
-    # Test image generators
-    if not test_image_generators():
-        log_message("❌ Image generator test failed. Exiting.")
-        return
-
-    # Prepare data generators
-    log_message("Preparing data generators...")
-    train_gen = ImageDataGenerator(rescale=1.0 / 255.0)
-    train_image_generator = train_gen.flow_from_directory(
-        "Vegetable Images/train",
-        target_size=(150, 150),
-        batch_size=32,
-        class_mode='categorical')
-
-    val_gen = ImageDataGenerator(rescale=1.0 / 255.0)
-    val_image_generator = val_gen.flow_from_directory(
-        "Vegetable Images/validation",
-        target_size=(150, 150),
-        batch_size=32,
-        class_mode='categorical')
-
-    # Get number of classes
-    num_classes = len(train_image_generator.class_indices)
-    log_message(f"Number of vegetable classes detected: {num_classes}")
-
-    # Build and compile model
-    model = build_and_compile_model(num_classes)
-
-    # Model training with extensive logging
-    log_message("Starting model training...")
-    early_stopping = keras.callbacks.EarlyStopping(patience=5)
-
-    try:
-        hist = model.fit(
-            train_image_generator,
-            epochs=10,  # Reduced for debugging
-            verbose=1,
-            validation_data=val_image_generator,
-            callbacks=[early_stopping]
-        )
-        log_message("✅ Model training completed successfully")
-
-        # Save the model and class indices
-        save_model_and_metadata(model, train_image_generator)
-
-    except Exception as e:
-        log_message(f"❌ Model training failed: {e}")
-        return
-
-
-# Run the main pipeline
-if __name__ == "__main__":
-    main()
+# Save the label map
+with open("../cam_veg/label_map.json", "w") as f:
+    json.dump(label_map, f)
