@@ -12,16 +12,20 @@ This project is a deep learning-based image classification system for recognizin
 - **Description:** The dataset contains images of 15 vegetable classes such as tomato, potato, carrot, etc.
 - **Structure:**
   ```
-  Vegetable_Images/
-    ├── train/
-    │   ├── Tomato/
-    │   ├── Potato/
-    │   └── ...
-    └── test/
-        ├── Tomato/
-        ├── Potato/
-        └── ...
-  ```
+
+````markdown
+```
+Vegetable_Images/
+├── train/
+│   ├── Tomato/
+│   ├── Potato/
+│   └── ...
+└── test/
+    ├── Tomato/
+    ├── Potato/
+    └── ...
+```
+````
 
 ---
 
