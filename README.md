@@ -5,6 +5,13 @@ This project focuses on **deep learning-based image processing** to classify veg
 
 <img src="view.JPG" alt="View of the System" width="400"/>
 
+<p style="font-size:28px;">
+  <a href="https://www.youtube.com/watch?v=Z6ZaP68kn-o" target="_blank">
+    Watch Demo Video
+  </a>
+</p>
+
+
 ---
 
 ## 🧠 Project Motivation
