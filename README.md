@@ -1,6 +1,5 @@
 
-# 🥦 Vegetable Image Classifier – Focus on Image Processing
-
+# 🥦 Vegetable Image Classifier 
 This project focuses on **deep learning-based image processing** to classify vegetables from images with high accuracy. Using **TensorFlow (Keras)** and a **pre-trained InceptionV3 model**, the system performs **real-time vegetable recognition**, while optionally integrating sensor data for inventory management.
 
 ---
