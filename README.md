@@ -1,19 +1,28 @@
 
-```markdown
-# 🥦 Vegetable Image Classifier with InceptionV3
+# 🥦 Vegetable Image Classifier – Focus on Image Processing
 
-This project is a deep learning-based image classification system for recognizing vegetables from images using **TensorFlow (Keras)** and a **pre-trained InceptionV3 model**. It was trained on the [Vegetable Image Dataset](https://www.kaggle.com/datasets/misrakahmed/vegetable-image-dataset) from Kaggle.
+This project focuses on **deep learning-based image processing** to classify vegetables from images with high accuracy. Using **TensorFlow (Keras)** and a **pre-trained InceptionV3 model**, the system performs **real-time vegetable recognition**, while optionally integrating sensor data for inventory management.
+
+---
+
+## 🧠 Project Motivation
+
+Recognizing and classifying vegetables in images is a **challenging computer vision task** due to variations in shape, color, lighting, and background. Accurate image processing enables:
+
+* **Automatic vegetable classification** without human supervision
+* **Real-time feedback** for inventory management
+* **Reduction of operational errors** caused by manual labeling
+
+By focusing on **image preprocessing, augmentation, and transfer learning**, this project ensures robust classification even with limited datasets.
 
 ---
 
 ## 📂 Dataset
 
-- **Source:** [Kaggle - Vegetable Image Dataset](https://www.kaggle.com/datasets/misrakahmed/vegetable-image-dataset)
-- **Description:** The dataset contains images of 15 vegetable classes such as tomato, potato, carrot, etc.
-- **Structure:**
-  ```
+* **Source:** [Kaggle - Vegetable Image Dataset](https://www.kaggle.com/datasets/misrakahmed/vegetable-image-dataset)
+* **Classes:** 15 vegetables (e.g., tomato, potato, carrot)
+* **Structure:**
 
-````markdown
 ```
 Vegetable_Images/
 ├── train/
@@ -25,35 +34,43 @@ Vegetable_Images/
     ├── Potato/
     └── ...
 ```
-````
 
 ---
 
-## 🧠 Model Architecture
+## 🚀 Image Processing Pipeline
 
-- **Base model:** InceptionV3 (pre-trained on ImageNet, top layers removed)
-- **Custom layers:**
-  - Global Average Pooling
-  - Dense (128 neurons, ReLU)
-  - Dropout (0.5)
-  - Dense output layer (Softmax over 15 classes)
-- **Image size:** All images are resized to **75x75** pixels to reduce computation time.
+1. **Image Loading and Resizing**
+   All images are resized to **75x75 pixels** for faster processing while retaining essential features.
+
+2. **Data Augmentation**
+   To improve generalization, the system applies:
+
+   * Rotations
+   * Zoom
+   * Horizontal flips
+   * Color normalization
+
+3. **Preprocessing for InceptionV3**
+   Images are normalized according to the pre-trained model’s requirements, ensuring **optimal feature extraction**.
+
+4. **Feature Extraction and Classification**
+
+   * **Base model:** InceptionV3 (pre-trained on ImageNet, top layers removed)
+   * **Custom layers:** Global Average Pooling → Dense (128, ReLU) → Dropout (0.5) → Dense output (Softmax over 15 classes)
+
+**Transfer learning** allows the system to leverage pre-learned features, focusing on vegetable-specific patterns like texture, shape, and color distribution.
 
 ---
 
-## 🚀 How to Use
+## 🏗️ Setup & Usage
 
-### 1. 🏗️ Setup
-
-Make sure you have Python 3.x installed, then install the required packages:
+1. **Install dependencies**
 
 ```bash
 pip install tensorflow opencv-python numpy scikit-learn
 ```
 
-### 2. 📁 Directory Structure
-
-Place your project files like this:
+2. **Project structure**
 
 ```
 vegetable_image_processing/
@@ -62,77 +79,68 @@ vegetable_image_processing/
 │   └── test/
 ├── model_training.py
 ├── image_predictor.py
-└── My_test/          # Your personal test images
+└── My_test/          # Personal test images
 ```
 
-> ✅ **Note:** Change `"My_test"` folder path if you want to test your own images.
-
-### 3. 🏋️‍♂️ Train the Model
+3. **Train the model**
 
 ```bash
 python model_training.py
 ```
 
-This will:
-- Load the training images and labels
-- Train the model for 10 epochs
-- Save the trained model as `vegetable_classifier.keras`
-- Save the label mapping to `label_map.json`
+* Loads images and labels
+* Performs **data augmentation**
+* Trains the model for 10 epochs
+* Saves `vegetable_classifier.keras` and `label_map.json`
 
-### 4. 🔍 Predict New Images
-
-Put your images in the `My_test` folder and run:
+4. **Predict new images**
 
 ```bash
 python image_predictor.py
 ```
 
-This script will:
-- Load your saved model and label map
-- Predict the top 3 vegetable classes for each image
-- Print prediction results with confidence scores
+* Outputs **top 3 predictions per image** with confidence scores
 
----
-
-## 🧪 Example Output
+**Example output:**
 
 ```
-📷 Image: my_carrot.jpg
-🔝 Top 3 Predictions:
+Image: my_carrot.jpg
+Top 3 Predictions:
 1. Carrot (0.9453)
 2. Tomato (0.0214)
 3. Radish (0.0158)
-----------------------------------------
 ```
 
 ---
 
 ## 🛠 Technologies Used
 
-- Python 🐍
-- TensorFlow / Keras 🧠
-- OpenCV 📸
-- NumPy 🧮
-- Scikit-learn 📊
+* **Python** 🐍
+* **TensorFlow / Keras** 🧠 – CNN model for image feature extraction
+* **OpenCV** 📸 – image loading, preprocessing, and augmentation
+* **NumPy** 🧮 – numerical operations
+* **Scikit-learn** 📊 – evaluation metrics
+
+Optional for inventory tracking:
+
+* **ESP32 + HX711** for weight-based triggers
+* **React + Node.js** for web interface
+
+---
+
+## 🔍 Key Features
+
+* **Advanced Image Processing:** preprocessing and augmentation for robust recognition
+* **High Accuracy Classification:** leverages InceptionV3 pre-trained features
+* **Real-time Predictions:** fast inference on new images
+* **Transfer Learning:** focuses on vegetable-specific patterns
+* **Optional Inventory Integration:** weight sensor triggers camera capture for synchronized stock monitoring
 
 ---
 
 ## 📌 Notes
 
-- InceptionV3 was used with frozen weights for fast and effective transfer learning.
-- You can increase the image resolution or unfreeze layers for better accuracy (at the cost of speed).
-
----
-
-## 📬 Credits
-
-- Dataset by [Ahmed Misrak](https://www.kaggle.com/datasets/misrakahmed/vegetable-image-dataset)
-- Project by [Oleg Muraviov]
-
----
-
-## ⭐️ Give it a star if you find it helpful!
-```
-
----
+* Images can be resized to higher resolutions to improve detection of subtle features
+* Augmentation helps the model generalize across different lighting and orientations
+* Freezing InceptionV3 layers speeds up training; unfreezing may improve accuracy further
 
